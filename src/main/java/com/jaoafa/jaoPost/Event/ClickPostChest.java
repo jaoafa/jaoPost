@@ -429,27 +429,22 @@ public class ClickPostChest implements Listener {
 	}
 
 	private Sign getBlockStickSign(Location loc){
-		Bukkit.broadcastMessage("000 " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + ": " + loc.getBlock().getType());
 		Location locsign = loc.add(1, 0, 0);
-		Bukkit.broadcastMessage("100 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
 		locsign = loc.add(-2, 0, 0);
-		Bukkit.broadcastMessage("001 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
 		locsign = loc.add(1, 0, 1);
-		Bukkit.broadcastMessage("-100 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
 		locsign = loc.add(0, 0, -2);
-		Bukkit.broadcastMessage("00-1 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
@@ -526,7 +521,6 @@ public class ClickPostChest implements Listener {
 		if(!event.getBlock().getType().equals(Material.WALL_SIGN) && !event.getBlock().getType().equals(Material.SIGN_POST)){
 			return;
 		}
-		Material material = event.getBlock().getType();
 		Sign sign = (Sign) event.getBlock().getState();
 		org.bukkit.material.Sign signdata = (org.bukkit.material.Sign) sign.getData();
 		Block block = event.getBlock().getRelative(signdata.getAttachedFace());
