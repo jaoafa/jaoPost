@@ -1,0 +1,13 @@
+name: JaoPost
+main: com.jaoafa.jaoPost.JaoPost
+version: 0.0.3
+description: Messaging Plugin
+database: true
+author: mine_book000
+website: https://jaoafa.com/
+commands:
+   post:
+      description: JaoPost
+      usage: /<command>
+      permission: jaoPost.post
+      permission-message: You do not have permission to perform this command.
