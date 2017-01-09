@@ -48,7 +48,7 @@ public class JoinCheck implements Listener {
 				count = res.getInt(1);
 			}
 			if(count != 0){
-				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "受信箱に" + count + "件のメッセージがあります！");
+				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "受信箱に" + ((int)count) + "件のメッセージがあります！");
 			}
 		} catch (SQLException e) {}
 	}
