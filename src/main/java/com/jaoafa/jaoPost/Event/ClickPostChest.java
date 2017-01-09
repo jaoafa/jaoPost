@@ -1,5 +1,8 @@
 package com.jaoafa.jaoPost.Event;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -294,20 +297,22 @@ public class ClickPostChest implements Listener {
 					List<String> pages_read = new ArrayList<String>();
 					List<String> pages = isbm.getPages();
 					for(int i=0; i < pages.size(); i++){
-						String[] strs = pages.get(i).split("¥n");
-						for (int o = 0 ; o < strs.length ; o++){
-							pages_read.add(strs[o]);
+						BufferedReader br = new BufferedReader(new StringReader(pages.get(i)));
+						String text = br.readLine();
+						while(text != null){
+							pages_read.add(text);
+							text = br.readLine();
 						}
 					}
-					bm.setPages(pages);
+					bm.setPages(pages_read);
 					bm.setLore(isbm.getLore());
 					item.setItemMeta(bm);
 
 					//ItemStack is = event.getClickedInventory().getItem(event.getSlot());
-					player.getInventory().setItemInHand(is);
-					cp.getHandle().openBook(CraftItemStack.asNMSCopy(is));
+					player.getInventory().setItemInHand(item);
+					cp.getHandle().openBook(CraftItemStack.asNMSCopy(item));
 
-				} catch (SQLException e) {
+				} catch (SQLException | IOException e) {
 					e.printStackTrace();
 					player.sendMessage("[jaoPost] " + ChatColor.GREEN + "未既読の変更に失敗しました。再度お試しください。");
 					player.closeInventory();
