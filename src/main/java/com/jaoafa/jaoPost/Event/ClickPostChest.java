@@ -19,8 +19,10 @@ import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -227,9 +229,9 @@ public class ClickPostChest implements Listener {
 	}
 	private class openJaotanMessagesInv extends BukkitRunnable{
 		Player player;
-    	public openJaotanMessagesInv(Player player) {
-    		this.player = player;
-    	}
+		public openJaotanMessagesInv(Player player) {
+			this.player = player;
+		}
 		@Override
 		public void run() {
 			openJaotanMessagesInv(player);
@@ -272,14 +274,36 @@ public class ClickPostChest implements Listener {
 					}
 					String readplayer = res.getString("readplayer");
 					//String readplayer = "";
-					if(readplayer.equalsIgnoreCase("")){
-						statement1.execute("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
-					}else{
-						statement1.execute("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
+					if(!readplayer.contains(player.getName())){
+						if(readplayer.equalsIgnoreCase("")){
+							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
+						}else{
+							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
+						}
 					}
 					CraftPlayer cp = (CraftPlayer) player;
 					event.setCancelled(true);
+
 					ItemStack is = event.getClickedInventory().getItem(event.getSlot());
+					BookMeta isbm = (BookMeta) is.getItemMeta();
+
+					ItemStack item = new ItemStack(Material.WRITTEN_BOOK, 1);
+					BookMeta bm = (BookMeta) item.getItemMeta();
+					bm.setAuthor(isbm.getAuthor());
+					bm.setDisplayName(isbm.getDisplayName());
+					List<String> pages_read = new ArrayList<String>();
+					List<String> pages = isbm.getPages();
+					for(int i=0; i < pages.size(); i++){
+						String[] strs = pages.get(i).split("¥n");
+						for (int o = 0 ; o < strs.length ; o++){
+							pages_read.add(strs[o]);
+						}
+					}
+					bm.setPages(pages);
+					bm.setLore(isbm.getLore());
+					item.setItemMeta(bm);
+
+					//ItemStack is = event.getClickedInventory().getItem(event.getSlot());
 					player.getInventory().setItemInHand(is);
 					cp.getHandle().openBook(CraftItemStack.asNMSCopy(is));
 
@@ -405,29 +429,34 @@ public class ClickPostChest implements Listener {
 	}
 
 	private Sign getBlockStickSign(Location loc){
+		Bukkit.broadcastMessage("000 " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + ": " + loc.getBlock().getType());
 		Location locsign = loc.add(1, 0, 0);
+		Bukkit.broadcastMessage("100 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
-		locsign = loc.add(0, 0, 1);
+		locsign = loc.add(-2, 0, 0);
+		Bukkit.broadcastMessage("001 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
-		locsign = loc.add(-1, 0, 0);
+		locsign = loc.add(1, 0, 1);
+		Bukkit.broadcastMessage("-100 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
-		locsign = loc.add(0, 0, -1);
+		locsign = loc.add(0, 0, -2);
+		Bukkit.broadcastMessage("00-1 " + locsign.getBlockX() + " " + locsign.getBlockY() + " " + locsign.getBlockZ() + ": " + locsign.getBlock().getType());
 		if(locsign.getBlock().getType() == Material.WALL_SIGN){
 			Sign sign = (Sign) locsign.getBlock().getState();
 			return sign;
 		}
 		return null;
 	}
-	private static void IntoBook(Inventory inv, String title, String message, String from, int id, int slot, String date) {
+	public static void IntoBook(Inventory inv, String title, String message, String from, int id, int slot, String date) {
 		ItemStack item = new ItemStack(Material.WRITTEN_BOOK, 1);
 		BookMeta bm = (BookMeta) item.getItemMeta();
 		bm.setAuthor(from);
@@ -490,5 +519,19 @@ public class ClickPostChest implements Listener {
 		bm.setPages(pages);
 		item.setItemMeta(bm);
 		inv.addItem(item);
+	}
+
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onSignChange(SignChangeEvent event){
+		if(!event.getBlock().getType().equals(Material.WALL_SIGN) && !event.getBlock().getType().equals(Material.SIGN_POST)){
+			return;
+		}
+		Material material = event.getBlock().getType();
+		Sign sign = (Sign) event.getBlock().getState();
+		org.bukkit.material.Sign signdata = (org.bukkit.material.Sign) sign.getData();
+		Block block = event.getBlock().getRelative(signdata.getAttachedFace());
+		if(block.getType() == Material.CHEST){
+			event.setLine(1, "[post]");
+		}
 	}
 }
