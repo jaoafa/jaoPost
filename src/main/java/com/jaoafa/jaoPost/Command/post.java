@@ -106,6 +106,7 @@ public class post implements CommandExecutor {
 
 			statement.execute("INSERT INTO jaopost (fromplayer, toplayer, title, message, readed, date) VALUES (\"" + player.getName() + "\", \"" + to + "\", \"" + title + "\", \"" + message + "\", false, \"" + date + "\")");
 			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信が完了しました。");
+			player.getInventory().clear(player.getInventory().getHeldItemSlot());
 			return true;
 		} catch (SQLException e) {
 			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
