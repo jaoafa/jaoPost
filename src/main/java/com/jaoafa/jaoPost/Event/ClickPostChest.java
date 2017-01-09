@@ -335,7 +335,7 @@ public class ClickPostChest implements Listener {
 				Inventory inv = Bukkit.getServer().createInventory(player, 3 * 9, "jaoPost - 既読済箱");
 				ItemStack item = new ItemStack(Material.BARRIER);
 				ItemMeta itemmeta = item.getItemMeta();
-				itemmeta.setDisplayName("受信箱は空です。");
+				itemmeta.setDisplayName("既読済箱は空です。");
 				item.setItemMeta(itemmeta);
 				inv.setItem(13, item);
 				player.openInventory(inv);

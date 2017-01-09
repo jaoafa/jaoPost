@@ -25,7 +25,7 @@ public class JaoPost extends JavaPlugin {
 		getCommand("post").setExecutor(new post(this));
 		getServer().getPluginManager().registerEvents(new ClickPostChest(this), this);
 		getServer().getPluginManager().registerEvents(new AdminMessageJoin(this), this);
-				getServer().getPluginManager().registerEvents(new JoinCheck(this), this);
+		getServer().getPluginManager().registerEvents(new JoinCheck(this), this);
 
 		FileConfiguration conf = getConfig();
 		if(conf.contains("sqluser") && conf.contains("sqlpassword")){
