@@ -38,10 +38,6 @@ public class post implements CommandExecutor {
 			return true;
 		}
 		Player player = (Player) sender;
-		if(player.getItemInHand().getType() == Material.AIR){
-			JaoPost.SendMessage(sender, cmd, "アイテムを持っていません。");
-			return true;
-		}
 		if(args.length == 1){
 			if(args[0].equalsIgnoreCase("show")){
 				return onCommand_Show(sender, cmd, commandLabel, args, player);
@@ -59,6 +55,10 @@ public class post implements CommandExecutor {
 	}
 	private boolean onCommand_Send(CommandSender sender, Command cmd, String commandLabel, String[] args, Player player){
 		String to = args[1];
+		if(player.getItemInHand().getType() == Material.AIR){
+			JaoPost.SendMessage(sender, cmd, "アイテムを持っていません。");
+			return true;
+		}
 		Material handtype = player.getItemInHand().getType();
 		if(handtype != Material.WRITTEN_BOOK){
 			JaoPost.SendMessage(sender, cmd, "このコマンドを使用するには、送る本を手に持ってください。");

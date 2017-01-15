@@ -95,7 +95,7 @@ public class JaoPost extends JavaPlugin {
 				statement = MySQL.check(statement);
 				try {
 					ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM jaopost WHERE toplayer = '" + player.getName() + "' AND readed = false;;");
-					double count = 0;
+					int count = 0;
 					if(res.next()){
 						count = res.getInt(1);
 					}
