@@ -48,6 +48,7 @@ public class AdminMessageJoin implements Listener {
 			}
 			if(count != 0){
 				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "jaotanからのメッセージが" + count + "件あります！");
+				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "/post showで閲覧できます！");
 			}
 		} catch (SQLException e) {}
 	}

@@ -1,8 +1,6 @@
 package com.jaoafa.jaoPost.Event;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -80,7 +78,7 @@ public class ClickPostChest implements Listener {
 			}
 			statement = MySQL.check(statement);
 			try {
-				ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM jaopost WHERE toplayer = '" + player.getName() + "' AND readed = false;;");
+				ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM jaopost WHERE toplayer = '" + player.getName() + "' AND readed = false;");
 				double count = 0;
 				if(res.next()){
 					count = res.getInt(1);
@@ -242,7 +240,7 @@ public class ClickPostChest implements Listener {
 	}
 
 	@EventHandler
-	public void onJaotanClick(InventoryClickEvent event) {
+	public void onJaotanClick(InventoryClickEvent event) throws IOException {
 		if(event.getWhoClicked().getType() != EntityType.PLAYER) return;
 		if(event.getClickedInventory() == null) return;
 		if(!event.getClickedInventory().getName().equals("jaoPost - お知らせ")) return;
@@ -296,14 +294,16 @@ public class ClickPostChest implements Listener {
 					bm.setDisplayName(isbm.getDisplayName());
 					List<String> pages_read = new ArrayList<String>();
 					List<String> pages = isbm.getPages();
-					for(int i=0; i < pages.size(); i++){
-						BufferedReader br = new BufferedReader(new StringReader(pages.get(i)));
-						String text = br.readLine();
-						while(text != null){
-							pages_read.add(text);
-							text = br.readLine();
-						}
+
+					if(pages.contains(0)){
+
 					}
+					String str = pages.get(0);
+
+					pages_read.add(str);
+					pages_read.add("このメッセージについて詳しくはDiscord#infoにて。\n"
+							+ "https://discord.gg/k4fuVnN");
+
 					bm.setPages(pages_read);
 					bm.setLore(isbm.getLore());
 					item.setItemMeta(bm);
@@ -312,7 +312,7 @@ public class ClickPostChest implements Listener {
 					player.getInventory().setItemInHand(item);
 					cp.getHandle().openBook(CraftItemStack.asNMSCopy(item));
 
-				} catch (SQLException | IOException e) {
+				} catch (SQLException e) {
 					e.printStackTrace();
 					player.sendMessage("[jaoPost] " + ChatColor.GREEN + "未既読の変更に失敗しました。再度お試しください。");
 					player.closeInventory();
@@ -532,5 +532,21 @@ public class ClickPostChest implements Listener {
 		if(block.getType() == Material.CHEST){
 			event.setLine(1, "[post]");
 		}
+	}
+	/**
+	 * 指定された文字列が、半角英数字(記号含む)か否かを返します。
+	 *
+	 * @param value 処理対象となる文字列
+	 * @return true:半角英数字である(もしくは対象文字がない), false:半角英数字でない
+	 * @see http://www.saka-en.com/java/java-ishalfwidthalphanumeric-string/
+	 */
+	public static Boolean isHalfWidthAlphanumeric(String value) {
+		if ( value == null || value.length() == 0 )
+			return true;
+		int len = value.length();
+		byte[] bytes = value.getBytes();
+		if ( len != bytes.length )
+			return false;
+		return true;
 	}
 }
