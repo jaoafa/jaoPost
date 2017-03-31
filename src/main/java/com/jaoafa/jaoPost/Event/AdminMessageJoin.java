@@ -39,7 +39,43 @@ public class AdminMessageJoin implements Listener {
 			e.printStackTrace();
 			return;
 		}
+
+		Statement statement1;
+		try {
+			statement1 = JaoPost.c.createStatement();
+		} catch (NullPointerException e) {
+			MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+			try {
+				JaoPost.c = MySQL.openConnection();
+				statement1 = JaoPost.c.createStatement();
+			} catch (ClassNotFoundException | SQLException e1) {
+				e1.printStackTrace();
+				return;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return;
+		}
 		statement = MySQL.check(statement);
+		statement1 = MySQL.check(statement1);
+
+		if(!player.hasPlayedBefore()){
+			try {
+				ResultSet res = statement.executeQuery("SELECT id FROM jaoinfo");
+				while(res.next()){
+					String readplayer = res.getString("readplayer");
+					int id = res.getInt("id");
+					if(!readplayer.contains(player.getName())){
+						if(readplayer.equalsIgnoreCase("")){
+							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
+						}else{
+							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
+						}
+					}
+				}
+			} catch (SQLException e) {}
+		}
+
 		try {
 			ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM `jaoinfo` WHERE `readplayer` NOT LIKE '%" + player.getName() + "%'");
 			int count = 0;
