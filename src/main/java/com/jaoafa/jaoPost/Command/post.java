@@ -3,8 +3,6 @@ package com.jaoafa.jaoPost.Command;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +29,7 @@ public class post implements CommandExecutor {
 	public post(JavaPlugin plugin) {
 		this.plugin = plugin;
 	}
+	public static Map<String,Map<String,String>> itemdata = new HashMap<String,Map<String,String>>();
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
 		if (!(sender instanceof Player)) {
 			JaoPost.SendMessage(sender, cmd, "このコマンドはゲーム内から実行してください。");
@@ -81,38 +80,44 @@ public class post implements CommandExecutor {
 			return true;
 		}
 		String message = pages.get(0);
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		String date = sdf.format(new Date());
-		Statement statement;
-		try {
-			statement = JaoPost.c.createStatement();
-		} catch (NullPointerException e) {
-			MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
-			try {
-				JaoPost.c = MySQL.openConnection();
-				statement = JaoPost.c.createStatement();
-			} catch (ClassNotFoundException | SQLException e1) {
-				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
-				e1.printStackTrace();
-				return true;
-			}
-		} catch (SQLException e) {
-			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
-			e.printStackTrace();
-			return true;
-		}
-		statement = MySQL.check(statement);
-		try {
 
-			statement.execute("INSERT INTO jaopost (fromplayer, toplayer, title, message, readed, date) VALUES (\"" + player.getName() + "\", \"" + to + "\", \"" + title + "\", \"" + message + "\", false, \"" + date + "\")");
-			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信が完了しました。");
-			player.getInventory().clear(player.getInventory().getHeldItemSlot());
-			return true;
-		} catch (SQLException e) {
-			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
-			e.printStackTrace();
-			return true;
-		}
+		Inventory inv = Bukkit.getServer().createInventory(player, 4 * 9, "jaoPost - アイテム送信有無選択");
+
+		ItemStack item = new ItemStack(Material.BOOK);
+		ItemMeta itemmeta = item.getItemMeta();
+		itemmeta.setDisplayName("送信する本にアイテムを添付しますか？");
+		item.setItemMeta(itemmeta);
+		inv.setItem(4, item);
+
+		ItemStack item_green = new ItemStack(Material.WOOL);
+		item_green.setDurability((short) 5); // 黄緑
+		ItemMeta itemmeta_green = item_green.getItemMeta();
+		itemmeta_green.setDisplayName("添付する");
+		item_green.setItemMeta(itemmeta_green);
+		inv.setItem(20, item_green);
+
+		ItemStack item_red = new ItemStack(Material.WOOL);
+		item_red.setDurability((short) 14); // 赤
+		ItemMeta itemmeta_red = item_red.getItemMeta();
+		itemmeta_red.setDisplayName("添付しない");
+		item_red.setItemMeta(itemmeta_red);
+		inv.setItem(24, item_red);
+
+		ItemStack item_white = new ItemStack(Material.WOOL);
+		ItemMeta itemmeta_white = item_white.getItemMeta();
+		itemmeta_white.setDisplayName("送信をやめる");
+		item_white.setItemMeta(itemmeta_white);
+		inv.setItem(35, item_white);
+
+		player.openInventory(inv);
+		Map<String,String> data = new HashMap<String,String>();
+
+		data.put("to", to);
+		data.put("title", title);
+		data.put("message", message);
+
+		itemdata.put(player.getName(), data);
+		return true;
 	}
 
 	private boolean onCommand_Show(CommandSender sender, Command cmd, String commandLabel, String[] args, Player player){
@@ -197,7 +202,12 @@ public class post implements CommandExecutor {
 				String message = res.getString("message");
 				String from = res.getString("fromplayer");
 				String date = res.getString("date");
-				ClickPostChest.IntoBook(inv, title, message, from, id, c, date);
+				String item = res.getString("item");
+				if(item.equals("")){
+					ClickPostChest.IntoBook(inv, title, message, from, id, c, date);
+				}else{
+					ClickPostChest.IntoBook_WithItem(inv, title, message, from, id, c, item, date);
+				}
 				c++;
 			}
 			ItemStack item = new ItemStack(Material.ENDER_CHEST);

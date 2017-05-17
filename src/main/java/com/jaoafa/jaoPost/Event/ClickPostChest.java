@@ -44,6 +44,7 @@ public class ClickPostChest implements Listener {
 	}
 	public static Map<String,Map<Integer,Integer>> post = new HashMap<String,Map<Integer,Integer>>();
 	public static Map<String,Map<Integer,Integer>> postjao = new HashMap<String,Map<Integer,Integer>>();
+	public static Map<String,Map<Integer,String>> withitempost = new HashMap<String,Map<Integer,String>>();
 	public static Map<String,Map<Integer,String>> jao = new HashMap<String,Map<Integer,String>>();
 	@EventHandler
 	public void onPlayerInteractEvent(PlayerInteractEvent event){
@@ -141,7 +142,12 @@ public class ClickPostChest implements Listener {
 					String message = res.getString("message");
 					String from = res.getString("fromplayer");
 					String date = res.getString("date");
-					IntoBook(inv, title, message, from, id, c, date);
+					String item = res.getString("item");
+					if(item.equals("")){
+						IntoBook(inv, title, message, from, id, c, date);
+					}else{
+						IntoBook_WithItem(inv, title, message, from, id, c, item, date);
+					}
 					c++;
 				}
 				ItemStack item = new ItemStack(Material.ENDER_CHEST);
@@ -219,6 +225,29 @@ public class ClickPostChest implements Listener {
 					return;
 				}
 				statement = MySQL.check(statement);
+				if(withitempost.containsKey(player.getName())){
+					if(withitempost.get(player.getName()).containsKey(event.getSlot())){
+						String item = withitempost.get(player.getName()).get(event.getSlot());
+						ItemStack is = BookItemCheck.jaoPostItemDataLoad(item);
+						if(is != null){
+							if(player.getInventory().firstEmpty() == -1){
+								player.getLocation().getWorld().dropItem(player.getLocation(), is);
+								player.sendMessage("[jaoPost] " + ChatColor.GREEN + "添付されていたアイテムをインベントリに追加しようとしましたが、インベントリが一杯だったのであなたの足元にドロップしました。");
+							}else{
+								player.getInventory().addItem(is);
+								player.sendMessage("[jaoPost] " + ChatColor.GREEN + "添付されていたアイテムをインベントリに追加しました。");
+							}
+						}else{
+							player.sendMessage("[jaoPost] " + ChatColor.GREEN + "添付されていたアイテム情報を取得できませんでした。");
+						}
+					}
+					try {
+						statement.execute("UPDATE jaopost SET readed = true WHERE id = " + id);
+					} catch (SQLException e) {
+						player.sendMessage("[jaoPost] " + ChatColor.GREEN + "未既読の変更に失敗しました。再度お試しください。");
+						event.setCancelled(true);
+					}
+				}
 				try {
 					statement.execute("UPDATE jaopost SET readed = true WHERE id = " + id);
 				} catch (SQLException e) {
@@ -480,6 +509,49 @@ public class ClickPostChest implements Listener {
 				Map<Integer, Integer> postdata = new HashMap<Integer, Integer>();
 				postdata.put(slot, id);
 				post.put(player.getName(), postdata);
+			}
+		}
+	}
+	public static void IntoBook_WithItem(Inventory inv, String title, String message, String from, int id, int slot, String ItemID, String date) {
+		ItemStack item = new ItemStack(Material.WRITTEN_BOOK, 1);
+		BookMeta bm = (BookMeta) item.getItemMeta();
+		bm.setAuthor(from);
+		bm.setDisplayName(title);
+		ArrayList<String> pages = new ArrayList<String>();
+		pages.add(message);
+		bm.setPages(pages);
+		List<String> lore = new ArrayList<String>();
+		lore.add("受信日時: " + date);
+		bm.setLore(lore);
+		item.setItemMeta(bm);
+		inv.addItem(item);
+
+		if(inv.getHolder() != null && inv.getHolder() instanceof Player) {
+			Player player = (Player) inv.getHolder();
+			if(post.containsKey(player.getName())){
+				Map<Integer, Integer> postdata = post.get(player.getName());
+				postdata.put(slot, id);
+				post.put(player.getName(), postdata);
+
+				if(withitempost.containsKey(player.getName())){
+					withitempost.get(player.getName()).put(slot, ItemID);
+				}else{
+					Map<Integer,String> itempost = new HashMap<Integer,String>();
+					itempost.put(slot, ItemID);
+					withitempost.put(player.getName(), itempost);
+				}
+			}else{
+				Map<Integer, Integer> postdata = new HashMap<Integer, Integer>();
+				postdata.put(slot, id);
+				post.put(player.getName(), postdata);
+
+				if(withitempost.containsKey(player.getName())){
+					withitempost.get(player.getName()).put(slot, ItemID);
+				}else{
+					Map<Integer,String> itempost = new HashMap<Integer,String>();
+					itempost.put(slot, ItemID);
+					withitempost.put(player.getName(), itempost);
+				}
 			}
 		}
 	}

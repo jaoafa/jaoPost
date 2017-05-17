@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import com.jaoafa.jaoPost.Command.post;
 import com.jaoafa.jaoPost.Event.AdminMessageJoin;
+import com.jaoafa.jaoPost.Event.BookItemCheck;
 import com.jaoafa.jaoPost.Event.ClickPostChest;
 import com.jaoafa.jaoPost.Event.JoinCheck;
 
@@ -31,6 +32,7 @@ public class JaoPost extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new ClickPostChest(this), this);
 		getServer().getPluginManager().registerEvents(new AdminMessageJoin(this), this);
 		getServer().getPluginManager().registerEvents(new JoinCheck(this), this);
+		getServer().getPluginManager().registerEvents(new BookItemCheck(this), this);
 		new Check().runTaskTimer(this, 24000, 24000);
 
 		FileConfiguration conf = getConfig();
@@ -61,6 +63,8 @@ public class JaoPost extends JavaPlugin {
 			return;
 		}
 		getLogger().info("MySQL Connect successful.");
+
+		instance = this;
 	}
 
 	@Override
@@ -116,5 +120,9 @@ public class JaoPost extends JavaPlugin {
 				} catch (SQLException e) {}
 			}
 		}
+	}
+	private static JavaPlugin instance;
+	public static JavaPlugin getJavaPlugin(){
+		return instance;
 	}
 }
