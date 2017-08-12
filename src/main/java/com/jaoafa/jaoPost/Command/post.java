@@ -3,6 +3,8 @@ package com.jaoafa.jaoPost.Command;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -31,25 +34,42 @@ public class post implements CommandExecutor {
 	}
 	public static Map<String,Map<String,String>> itemdata = new HashMap<String,Map<String,String>>();
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
-		if (!(sender instanceof Player)) {
-			JaoPost.SendMessage(sender, cmd, "このコマンドはゲーム内から実行してください。");
-			Bukkit.getLogger().info("ERROR! コマンドがゲーム内から実行されませんでした。");
-			return true;
-		}
-		Player player = (Player) sender;
+
 		if(args.length == 1){
 			if(args[0].equalsIgnoreCase("show")){
+				if (!(sender instanceof Player)) {
+					JaoPost.SendMessage(sender, cmd, "このコマンドはゲーム内から実行してください。");
+					Bukkit.getLogger().info("ERROR! コマンドがゲーム内から実行されませんでした。");
+					return true;
+				}
+				Player player = (Player) sender;
 				return onCommand_Show(sender, cmd, commandLabel, args, player);
 			}
 		}else if(args.length == 2){
 			if(args[0].equalsIgnoreCase("send")){
+				if (!(sender instanceof Player)) {
+					JaoPost.SendMessage(sender, cmd, "このコマンドはゲーム内から実行してください。");
+					Bukkit.getLogger().info("ERROR! コマンドがゲーム内から実行されませんでした。");
+					return true;
+				}
+				Player player = (Player) sender;
 				return onCommand_Send(sender, cmd, commandLabel, args, player);
+			}
+		}else if(args.length == 4){
+			if(args[0].equalsIgnoreCase("cmdbsend")){
+				if (!(sender instanceof BlockCommandSender)) {
+					JaoPost.SendMessage(sender, cmd, "このコマンドはコマンドブロックから実行してください。");
+					return true;
+				}
+				return onCommand_SendByCmdb(sender, cmd, commandLabel, args);
 			}
 		}
 		JaoPost.SendMessage(sender, cmd, "--- jaoPost Help ---");
 		JaoPost.SendMessage(sender, cmd, "/post: このコマンドのヘルプを表示する。");
 		JaoPost.SendMessage(sender, cmd, "/post show: ポストを見る");
 		JaoPost.SendMessage(sender, cmd, "/post send <Player>: Playerに対して手に持っている本を送信する。");
+		JaoPost.SendMessage(sender, cmd, "/post cmdbsend <Player> <Title> <Text>: Playerに対してTitleのTextを送信する。(コマンドブロックのみ使用可能)");
+		JaoPost.SendMessage(sender, cmd, "Tips: /post cmdbsendではコマンドブロックの名前が送信者として登録されます。");
 		return true;
 	}
 	private boolean onCommand_Send(CommandSender sender, Command cmd, String commandLabel, String[] args, Player player){
@@ -118,6 +138,43 @@ public class post implements CommandExecutor {
 
 		itemdata.put(player.getName(), data);
 		return true;
+	}
+
+	private boolean onCommand_SendByCmdb(CommandSender sender, Command cmd, String commandLabel, String[] args){
+		String to = args[1];
+		String title = args[2];
+		String message = args[3];
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		String date = sdf.format(new Date());
+
+		Statement statement;
+		try {
+			statement = JaoPost.c.createStatement();
+		} catch (NullPointerException e) {
+			MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+			try {
+				JaoPost.c = MySQL.openConnection();
+				statement = JaoPost.c.createStatement();
+			} catch (ClassNotFoundException | SQLException e1) {
+				sender.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
+				e1.printStackTrace();
+				return true;
+			}
+		} catch (SQLException e) {
+			sender.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
+			e.printStackTrace();
+			return true;
+		}
+		statement = MySQL.check(statement);
+		try {
+			statement.execute("INSERT INTO jaopost (fromplayer, toplayer, title, message, readed, date) VALUES (\"" + sender.getName() + " (Cmdb)\", \"" + to + "\", \"" + title + "\", \"" + message + "\", false, \"" + date + "\")");
+			sender.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信が完了しました。");
+			return true;
+		} catch (SQLException e) {
+			sender.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
+			e.printStackTrace();
+			return true;
+		}
 	}
 
 	private boolean onCommand_Show(CommandSender sender, Command cmd, String commandLabel, String[] args, Player player){
