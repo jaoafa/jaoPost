@@ -20,10 +20,8 @@ import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -592,7 +590,7 @@ public class ClickPostChest implements Listener {
 		item.setItemMeta(bm);
 		inv.addItem(item);
 	}
-
+/*
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onSignChange(SignChangeEvent event){
 		if(!event.getBlock().getType().equals(Material.WALL_SIGN) && !event.getBlock().getType().equals(Material.SIGN_POST)){
@@ -605,6 +603,7 @@ public class ClickPostChest implements Listener {
 			event.setLine(1, "[post]");
 		}
 	}
+*/
 	/**
 	 * 指定された文字列が、半角英数字(記号含む)か否かを返します。
 	 *
