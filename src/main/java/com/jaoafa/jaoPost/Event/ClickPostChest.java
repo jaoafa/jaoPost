@@ -273,6 +273,13 @@ public class ClickPostChest implements Listener {
 		if(!event.getClickedInventory().getName().equals("jaoPost - お知らせ")) return;
 		Player player = (Player) event.getWhoClicked();
 		if(postjao.containsKey(player.getName())){
+			if(event.getSlot() == 53){
+				// 全部既読
+				player.closeInventory();
+				com.jaoafa.jaoPost.Command.post.ALLReadInfo(player);
+				return;
+			}
+
 			Map<Integer, Integer> postdata = postjao.get(player.getName());
 			if(postdata.containsKey(event.getSlot())){
 				int id = postdata.get(event.getSlot());
@@ -436,9 +443,12 @@ public class ClickPostChest implements Listener {
 		statement = MySQL.check(statement);
 		try {
 			ResultSet res = statement.executeQuery("SELECT * FROM `jaoinfo` ORDER BY `id` DESC");
-			Inventory inv = Bukkit.getServer().createInventory(player, 5 * 9, "jaoPost - お知らせ");
+			Inventory inv = Bukkit.getServer().createInventory(player, 6 * 9, "jaoPost - お知らせ");
 			int c = 0;
 			while(res.next()){
+				if(c >= 5 * 9){
+					break;
+				}
 				String readed = res.getString("readplayer");
 				String title;
 				if(!readed.contains(player.getName())){
@@ -453,6 +463,12 @@ public class ClickPostChest implements Listener {
 				IntoBook_Jaotan(inv, title, message, id, c);
 				c++;
 			}
+
+			ItemStack item = new ItemStack(Material.BOOKSHELF);
+			ItemMeta itemmeta = item.getItemMeta();
+			itemmeta.setDisplayName("すべてのお知らせを既読にする。");
+			item.setItemMeta(itemmeta);
+			inv.setItem(53, item);
 
 			player.openInventory(inv);
 		} catch (SQLException e) {

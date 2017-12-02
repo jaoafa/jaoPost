@@ -34,7 +34,6 @@ public class post implements CommandExecutor {
 	}
 	public static Map<String,Map<String,String>> itemdata = new HashMap<String,Map<String,String>>();
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
-
 		if(args.length == 1){
 			if(args[0].equalsIgnoreCase("show")){
 				if (!(sender instanceof Player)) {
@@ -44,6 +43,16 @@ public class post implements CommandExecutor {
 				}
 				Player player = (Player) sender;
 				return onCommand_Show(sender, cmd, commandLabel, args, player);
+			}else if(args[0].equalsIgnoreCase("allread")){
+				// 全既読
+				if (!(sender instanceof Player)) {
+					JaoPost.SendMessage(sender, cmd, "このコマンドはゲーム内から実行してください。");
+					Bukkit.getLogger().info("ERROR! コマンドがゲーム内から実行されませんでした。");
+					return true;
+				}
+				Player player = (Player) sender;
+				ALLReadInfo(player);
+				return true;
 			}
 		}else if(args.length == 2){
 			if(args[0].equalsIgnoreCase("send")){
@@ -67,6 +76,7 @@ public class post implements CommandExecutor {
 		JaoPost.SendMessage(sender, cmd, "--- jaoPost Help ---");
 		JaoPost.SendMessage(sender, cmd, "/post: このコマンドのヘルプを表示する。");
 		JaoPost.SendMessage(sender, cmd, "/post show: ポストを見る");
+		JaoPost.SendMessage(sender, cmd, "/post allread: jaotanからのメッセージ(お知らせ)をすべて既読にする");
 		JaoPost.SendMessage(sender, cmd, "/post send <Player>: Playerに対して手に持っている本を送信する。");
 		JaoPost.SendMessage(sender, cmd, "/post cmdbsend <Player> <Title> <Text>: Playerに対してTitleのTextを送信する。(コマンドブロックのみ使用可能)");
 		JaoPost.SendMessage(sender, cmd, "Tips: /post cmdbsendではコマンドブロックの名前が送信者として登録されます。");
@@ -174,6 +184,65 @@ public class post implements CommandExecutor {
 			sender.sendMessage("[jaoPost] " + ChatColor.GREEN + "送信にエラーが発生しました。再度お試しください。");
 			e.printStackTrace();
 			return true;
+		}
+	}
+
+	public static void ALLReadInfo(Player player){
+		Statement statement;
+		try {
+			statement = JaoPost.c.createStatement();
+		} catch (NullPointerException e) {
+			MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+			try {
+				JaoPost.c = MySQL.openConnection();
+				statement = JaoPost.c.createStatement();
+			} catch (ClassNotFoundException | SQLException e1) {
+				e1.printStackTrace();
+				return;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return;
+		}
+		Statement statement1;
+		try {
+			statement1 = JaoPost.c.createStatement();
+		} catch (NullPointerException e) {
+			MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+			try {
+				JaoPost.c = MySQL.openConnection();
+				statement1 = JaoPost.c.createStatement();
+			} catch (ClassNotFoundException | SQLException e1) {
+				e1.printStackTrace();
+				return;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		statement = MySQL.check(statement);
+		statement1 = MySQL.check(statement1);
+
+		try {
+			ResultSet res = statement.executeQuery("SELECT * FROM jaoinfo WHERE readplayer NOT LIKE '%" + player.getName() + "%';");
+			int count = 0;
+			while(res.next()){
+				int id = res.getInt("id");
+				String readplayer = res.getString("readplayer");
+				int bool;
+				if(readplayer.equalsIgnoreCase("")){
+					statement1.executeUpdate("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
+				}else{
+					statement1.executeUpdate("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
+				}
+				count++;
+			}
+			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "すべてのメッセージの既読処理を終了しました。(処理件数: " + count + "件)");
+		} catch (SQLException e) {
+			// TODO 自動生成された catch ブロック
+			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "既読処理にエラーが発生しました。再度お試しください。");
+			e.printStackTrace();
 		}
 	}
 
