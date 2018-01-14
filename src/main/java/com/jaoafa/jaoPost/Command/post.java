@@ -109,7 +109,7 @@ public class post implements CommandExecutor {
 			JaoPost.SendMessage(sender, cmd, "エラーが発生しました。詳しくはプラグイン制作者にお問い合わせください。Debug: Pages null");
 			return true;
 		}
-		String message = pages.get(0);
+		String message = implode(pages, "§j");
 
 		Inventory inv = Bukkit.getServer().createInventory(player, 4 * 9, "jaoPost - アイテム送信有無選択");
 
@@ -230,7 +230,6 @@ public class post implements CommandExecutor {
 			while(res.next()){
 				int id = res.getInt("id");
 				String readplayer = res.getString("readplayer");
-				int bool;
 				if(readplayer.equalsIgnoreCase("")){
 					statement1.executeUpdate("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
 				}else{
@@ -372,5 +371,12 @@ public class post implements CommandExecutor {
 			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "受信箱のチェックに失敗しました。再度お試しください。");
 			return true;
 		}
+	}
+	public static <T> String implode(List<T> list, String glue) {
+	    StringBuilder sb = new StringBuilder();
+	    for (T e : list) {
+	        sb.append(glue).append(e);
+	    }
+	    return sb.substring(glue.length());
 	}
 }

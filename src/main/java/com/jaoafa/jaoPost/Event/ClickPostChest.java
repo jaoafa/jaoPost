@@ -505,7 +505,10 @@ public class ClickPostChest implements Listener {
 		bm.setAuthor(from);
 		bm.setDisplayName(title);
 		ArrayList<String> pages = new ArrayList<String>();
-		pages.add(message);
+		String[] messages = message.split("§j");
+		for(String msg : messages){
+			pages.add(msg);
+		}
 		bm.setPages(pages);
 		List<String> lore = new ArrayList<String>();
 		lore.add("受信日時: " + date);
@@ -532,7 +535,10 @@ public class ClickPostChest implements Listener {
 		bm.setAuthor(from);
 		bm.setDisplayName(title);
 		ArrayList<String> pages = new ArrayList<String>();
-		pages.add(message);
+		String[] messages = message.split("§j");
+		for(String msg : messages){
+			pages.add(msg);
+		}
 		bm.setPages(pages);
 		List<String> lore = new ArrayList<String>();
 		lore.add("受信日時: " + date);
