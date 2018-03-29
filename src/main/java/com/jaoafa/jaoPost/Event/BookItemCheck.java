@@ -66,7 +66,7 @@ public class BookItemCheck implements Listener {
 			try {
 				statement = JaoPost.c.createStatement();
 			} catch (NullPointerException e) {
-				MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+				MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
 				try {
 					JaoPost.c = MySQL.openConnection();
 					statement = JaoPost.c.createStatement();
@@ -166,7 +166,7 @@ public class BookItemCheck implements Listener {
 		try {
 			statement = JaoPost.c.createStatement();
 		} catch (NullPointerException e) {
-			MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+			MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
 			try {
 				JaoPost.c = MySQL.openConnection();
 				statement = JaoPost.c.createStatement();

@@ -24,6 +24,7 @@ import com.jaoafa.jaoPost.Event.JoinCheck;
 public class JaoPost extends JavaPlugin {
 	public static String sqluser;
 	public static String sqlpassword;
+	public static String sqlserver = "jaoafa.com";
 	public static Connection c = null;
 
 	@Override
@@ -45,7 +46,10 @@ public class JaoPost extends JavaPlugin {
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", sqluser, sqlpassword);
+		if(conf.contains("sqlserver")){
+			sqlserver = (String) conf.get("sqlserver");
+		}
+		MySQL MySQL = new MySQL(sqlserver, "3306", "jaoafa", sqluser, sqlpassword);
 
 		try {
 			c = MySQL.openConnection();
@@ -84,7 +88,7 @@ public class JaoPost extends JavaPlugin {
 				try {
 					statement = JaoPost.c.createStatement();
 				} catch (NullPointerException e) {
-					MySQL MySQL = new MySQL("jaoafa.com", "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
+					MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
 					try {
 						JaoPost.c = MySQL.openConnection();
 						statement = JaoPost.c.createStatement();
