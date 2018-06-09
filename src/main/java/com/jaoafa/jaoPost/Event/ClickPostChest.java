@@ -24,8 +24,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -350,9 +349,10 @@ public class ClickPostChest implements Listener {
 					item.setItemMeta(bm);
 
 					//ItemStack is = event.getClickedInventory().getItem(event.getSlot());
-					player.getInventory().setItemInHand(item);
-					cp.getHandle().openBook(CraftItemStack.asNMSCopy(item));
-
+					player.getInventory().setItemInMainHand(item);
+					//cp.getHandle().openBook(CraftItemStack.asNMSCopy(item));
+					player.sendMessage("[jaoPost] " + ChatColor.GREEN + "右クリックして本を閲覧ください。");
+					player.closeInventory();
 				} catch (SQLException e) {
 					e.printStackTrace();
 					player.sendMessage("[jaoPost] " + ChatColor.GREEN + "未既読の変更に失敗しました。再度お試しください。");
