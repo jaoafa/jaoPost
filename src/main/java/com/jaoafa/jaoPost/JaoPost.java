@@ -1,9 +1,9 @@
 package com.jaoafa.jaoPost;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -13,6 +13,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.jaoafa.jaoPost.Command.post;
 import com.jaoafa.jaoPost.Event.AdminMessageJoin;
@@ -25,7 +27,9 @@ public class JaoPost extends JavaPlugin {
 	public static String sqluser;
 	public static String sqlpassword;
 	public static String sqlserver = "jaoafa.com";
+	public static String discordtoken = null;
 	public static Connection c = null;
+	public static long ConnectionCreate = 0;
 
 	@Override
 	public void onEnable() {
@@ -37,6 +41,11 @@ public class JaoPost extends JavaPlugin {
 		new Check().runTaskTimer(this, 24000, 24000);
 
 		FileConfiguration conf = getConfig();
+
+		if(conf.contains("discordtoken")){
+			discordtoken = (String) conf.get("discordtoken");
+		}
+
 		if(conf.contains("sqluser") && conf.contains("sqlpassword")){
 			JaoPost.sqluser = conf.getString("sqluser");
 			JaoPost.sqlpassword = conf.getString("sqlpassword");
@@ -84,44 +93,33 @@ public class JaoPost extends JavaPlugin {
 		@Override
 		public void run() {
 			for(Player player: Bukkit.getServer().getOnlinePlayers()) {
-				Statement statement;
-				try {
-					statement = JaoPost.c.createStatement();
-				} catch (NullPointerException e) {
-					MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
-					try {
-						JaoPost.c = MySQL.openConnection();
-						statement = JaoPost.c.createStatement();
-					} catch (ClassNotFoundException | SQLException e1) {
-						e1.printStackTrace();
-						return;
+				Map<String, String> headers = new HashMap<>();
+				headers.put("Content-Type", "application/json");
+				headers.put("Authorization", "Bot " + JaoPost.discordtoken);
+				headers.put("User-Agent", "DiscordBot (https://jaoafa.com, v0.0.1)");
+
+				JSONArray MessageList = ClickPostChest.getHttpsArrayJson("https://discordapp.com/api/channels/245526046303059969/messages?limit=100", headers);
+
+				int count = 0;
+				int c = 0;
+				for(int i = 0; i < MessageList.size(); i++){
+					if(c >= 5 * 9){
+						break;
 					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-					return;
+					JSONObject message = (JSONObject) MessageList.get(i);
+					String id = (String) message.get("id");
+					Long type = (Long) message.get("type");
+					if(type != 0) continue;
+					if(!ClickPostChest.isMessageRead(id, player.getUniqueId())){
+						count++;
+					}
+					c++;
 				}
-				statement = MySQL.check(statement);
-				try {
-					ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM jaopost WHERE toplayer = '" + player.getName() + "' AND readed = false;;");
-					int count = 0;
-					if(res.next()){
-						count = res.getInt(1);
-					}
-					if(count != 0){
-						player.sendMessage("[jaoPost] " + ChatColor.GREEN + "受信箱に" + count + "件のメッセージがあります！");
-					}
-				} catch (SQLException e) {}
-				statement = MySQL.check(statement);
-				try {
-					ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM `jaoinfo` WHERE `readplayer` NOT LIKE '%" + player.getName() + "%'");
-					int count = 0;
-					if(res.next()){
-						count = res.getInt(1);
-					}
-					if(count != 0){
-						player.sendMessage("[jaoPost] " + ChatColor.GREEN + "jaotanからのメッセージが" + count + "件あります！");
-					}
-				} catch (SQLException e) {}
+
+				if(count != 0){
+					player.sendMessage("[jaoPost] " + ChatColor.GREEN + "jaotanからのメッセージが" + count + "件あります！");
+					player.sendMessage("[jaoPost] " + ChatColor.GREEN + "/post showで閲覧できます。また、/post allreadですべてを既読にできます。");
+				}
 			}
 		}
 	}

@@ -1,8 +1,9 @@
 package com.jaoafa.jaoPost.Event;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -11,9 +12,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.jaoafa.jaoPost.JaoPost;
 import com.jaoafa.jaoPost.MySQL;
+import com.jaoafa.jaoPost.Command.post;
 
 public class AdminMessageJoin implements Listener {
 	JavaPlugin plugin;
@@ -60,32 +64,35 @@ public class AdminMessageJoin implements Listener {
 		statement1 = MySQL.check(statement1);
 
 		if(!player.hasPlayedBefore()){
-			try {
-				ResultSet res = statement.executeQuery("SELECT id FROM jaoinfo");
-				while(res.next()){
-					String readplayer = res.getString("readplayer");
-					int id = res.getInt("id");
-					if(!readplayer.contains(player.getName())){
-						if(readplayer.equalsIgnoreCase("")){
-							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
-						}else{
-							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
-						}
-					}
-				}
-			} catch (SQLException e) {}
+			post.ALLReadInfo(player);
 		}
 
-		try {
-			ResultSet res = statement.executeQuery("SELECT COUNT(id) FROM `jaoinfo` WHERE `readplayer` NOT LIKE '%" + player.getName() + "%'");
-			int count = 0;
-			if(res.next()){
-				count = res.getInt(1);
+		Map<String, String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/json");
+		headers.put("Authorization", "Bot " + JaoPost.discordtoken);
+		headers.put("User-Agent", "DiscordBot (https://jaoafa.com, v0.0.1)");
+
+		JSONArray MessageList = ClickPostChest.getHttpsArrayJson("https://discordapp.com/api/channels/245526046303059969/messages?limit=100", headers);
+
+		int count = 0;
+		int c = 0;
+		for(int i = 0; i < MessageList.size(); i++){
+			if(c >= 5 * 9){
+				break;
 			}
-			if(count != 0){
-				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "jaotanからのメッセージが" + count + "件あります！");
-				player.sendMessage("[jaoPost] " + ChatColor.GREEN + "/post showで閲覧できます。また、/post allreadですべてを既読にできます。");
+			JSONObject message = (JSONObject) MessageList.get(i);
+			String id = (String) message.get("id");
+			Long type = (Long) message.get("type");
+			if(type != 0) continue;
+			if(!ClickPostChest.isMessageRead(id, player.getUniqueId())){
+				count++;
 			}
-		} catch (SQLException e) {}
+			c++;
+		}
+
+		if(count != 0){
+			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "jaotanからのメッセージが" + count + "件あります！");
+			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "/post showで閲覧できます。また、/post allreadですべてを既読にできます。");
+		}
 	}
 }

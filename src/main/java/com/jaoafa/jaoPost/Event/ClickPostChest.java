@@ -1,13 +1,22 @@
 package com.jaoafa.jaoPost.Event;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,6 +40,9 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.jaoafa.jaoPost.JaoPost;
 import com.jaoafa.jaoPost.MySQL;
@@ -41,7 +53,7 @@ public class ClickPostChest implements Listener {
 		this.plugin = plugin;
 	}
 	public static Map<String,Map<Integer,Integer>> post = new HashMap<String,Map<Integer,Integer>>();
-	public static Map<String,Map<Integer,Integer>> postjao = new HashMap<String,Map<Integer,Integer>>();
+	public static Map<String, Map<Integer, String>> postjao = new HashMap<String,Map<Integer,String>>();
 	public static Map<String,Map<Integer,String>> withitempost = new HashMap<String,Map<Integer,String>>();
 	public static Map<String,Map<Integer,String>> jao = new HashMap<String,Map<Integer,String>>();
 	@EventHandler
@@ -280,9 +292,9 @@ public class ClickPostChest implements Listener {
 				return;
 			}
 
-			Map<Integer, Integer> postdata = postjao.get(player.getName());
+			Map<Integer, String> postdata = postjao.get(player.getName());
 			if(postdata.containsKey(event.getSlot())){
-				int id = postdata.get(event.getSlot());
+				String id = postdata.get(event.getSlot());
 				Statement statement1;
 				try {
 					statement1 = JaoPost.c.createStatement();
@@ -301,20 +313,15 @@ public class ClickPostChest implements Listener {
 				}
 				statement1 = MySQL.check(statement1);
 				try {
-					ResultSet res = statement1.executeQuery("SELECT * FROM jaoinfo WHERE id = " + id);
-					if(!res.next()){
-						player.sendMessage("[jaoPost] " + ChatColor.GREEN + "未既読の変更に失敗しました。再度お試しください。");
-						player.closeInventory();
-						event.setCancelled(true);
+					ResultSet res = statement1.executeQuery("SELECT * FROM jaoinfo WHERE msgid = \"" + id + "\"");
+					String readplayer = "";
+					if(res.next()){
+						readplayer = res.getString("readplayer");
 					}
-					String readplayer = res.getString("readplayer");
+
 					//String readplayer = "";
 					if(!readplayer.contains(player.getName())){
-						if(readplayer.equalsIgnoreCase("")){
-							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
-						}else{
-							statement1.execute("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
-						}
+						addMessageRead(id, player.getUniqueId());
 					}
 					CraftPlayer cp = (CraftPlayer) player;
 					event.setCancelled(true);
@@ -336,7 +343,7 @@ public class ClickPostChest implements Listener {
 
 					pages_read.add(str);
 					pages_read.add("このメッセージについて詳しくはDiscord#infoにて。\n"
-							+ "https://discord.gg/k4fuVnN");
+							+ "https://jaoafa.com/community/discord");
 
 					bm.setPages(pages_read);
 					bm.setLore(isbm.getLore());
@@ -424,55 +431,173 @@ public class ClickPostChest implements Listener {
 	}
 
 	private void openJaotanMessagesInv(Player player){
-		Statement statement;
-		try {
-			statement = JaoPost.c.createStatement();
-		} catch (NullPointerException e) {
-			MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
-			try {
-				JaoPost.c = MySQL.openConnection();
-				statement = JaoPost.c.createStatement();
-			} catch (ClassNotFoundException | SQLException e1) {
-				e1.printStackTrace();
-				return;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+		if(JaoPost.discordtoken == null){
+			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "お知らせのチェックに失敗しました。開発部にお問い合わせください。");
 			return;
 		}
-		statement = MySQL.check(statement);
-		try {
-			ResultSet res = statement.executeQuery("SELECT * FROM `jaoinfo` ORDER BY `id` DESC");
-			Inventory inv = Bukkit.getServer().createInventory(player, 6 * 9, "jaoPost - お知らせ");
-			int c = 0;
-			while(res.next()){
-				if(c >= 5 * 9){
-					break;
-				}
-				String readed = res.getString("readplayer");
-				String title;
-				if(!readed.contains(player.getName())){
-					title = res.getString("date") + "に投稿されたメッセージ" + ChatColor.RED + "(NEW!!)";
-				}else{
-					title = res.getString("date") + "に投稿されたメッセージ";
-				}
-
-				String message = res.getString("message");
-				int id = res.getInt("id");
-
-				IntoBook_Jaotan(inv, title, message, id, c);
-				c++;
+		player.sendMessage("[jaoPost] " + ChatColor.GREEN + "しばらくお待ちください…。");
+		Inventory inv = Bukkit.getServer().createInventory(player, 6 * 9, "jaoPost - お知らせ");
+		/*int c = 0;
+		while(res.next()){
+			if(c >= 5 * 9){
+				break;
+			}
+			String readed = res.getString("readplayer");
+			String title;
+			if(!readed.contains(player.getName())){
+				title = res.getString("date") + "に投稿されたメッセージ" + ChatColor.RED + "(NEW!!)";
+			}else{
+				title = res.getString("date") + "に投稿されたメッセージ";
 			}
 
-			ItemStack item = new ItemStack(Material.BOOKSHELF);
-			ItemMeta itemmeta = item.getItemMeta();
-			itemmeta.setDisplayName("すべてのお知らせを既読にする。");
-			item.setItemMeta(itemmeta);
-			inv.setItem(53, item);
+			String message = res.getString("message");
+			int id = res.getInt("id");
 
-			player.openInventory(inv);
-		} catch (SQLException e) {
-			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "お知らせのチェックに失敗しました。再度お試しください。");
+			IntoBook_Jaotan(inv, title, message, id, c);
+			c++;
+		}*/
+
+
+		Map<String, String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/json");
+		headers.put("Authorization", "Bot " + JaoPost.discordtoken);
+		headers.put("User-Agent", "DiscordBot (https://jaoafa.com, v0.0.1)");
+
+		JSONArray MessageList = getHttpsArrayJson("https://discordapp.com/api/channels/245526046303059969/messages?limit=100", headers);
+
+		int c = 0;
+		for(int i = 0; i < MessageList.size(); i++){
+			if(c >= 5 * 9){
+				break;
+			}
+			JSONObject message = (JSONObject) MessageList.get(i);
+			String id = (String) message.get("id");
+			String content = (String) message.get("content");
+			Long type = (Long) message.get("type");
+			if(type != 0) continue;
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			long unixtime = (Long.parseLong(id) >> 22) + 1420070400000L;
+			Date date = new Date(unixtime);
+
+			String title = sdf.format(date) + "に投稿されたメッセージ";
+			if(!isMessageRead(id, player.getUniqueId())){
+				title += ChatColor.RED + "(NEW!!)";
+			}
+
+			IntoBook_Jaotan(inv, title, content, id, c);
+			c++;
+		}
+
+		ItemStack item = new ItemStack(Material.BOOKSHELF);
+		ItemMeta itemmeta = item.getItemMeta();
+		itemmeta.setDisplayName("すべてのお知らせを既読にする。");
+		item.setItemMeta(itemmeta);
+		inv.setItem(53, item);
+
+		player.openInventory(inv);
+	}
+
+	public static boolean isMessageRead(String msgid, UUID uuid){ // 53メッセージのみ
+		try {
+			PreparedStatement statement = MySQL.getNewPreparedStatement("SELECT * FROM jaoinfo WHERE msgid = ?");
+			statement.setString(1, msgid);
+			ResultSet res = statement.executeQuery();
+			if(!res.next()){
+				return false;
+			}
+			String readplayer = res.getString("readplayer");
+			if(readplayer.contains(uuid.toString())){
+				return true;
+			}else{
+				return false;
+			}
+		} catch (SQLException | ClassNotFoundException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public static void addMessageRead(String msgid, UUID uuid){
+		try {
+			PreparedStatement statement = MySQL.getNewPreparedStatement("SELECT * FROM jaoinfo WHERE msgid = ?");
+			statement.setString(1, msgid);
+			ResultSet res = statement.executeQuery();
+			if(!res.next()){
+				PreparedStatement insent_statement = MySQL.getNewPreparedStatement("INSERT INTO jaoinfo (msgid, readplayer) VALUES (?, ?)");
+				insent_statement.setString(1, msgid);
+				insent_statement.setString(2, uuid.toString());
+				insent_statement.execute();
+				return;
+			}
+			String readplayer = res.getString("readplayer");
+			if(readplayer.contains(uuid.toString())){
+				return;
+			}
+			int id = res.getInt("id");
+			PreparedStatement add_statement = MySQL.getNewPreparedStatement("UPDATE jaoinfo SET readplayer = ? WHERE id = ?");
+			if(readplayer.equalsIgnoreCase("")){
+				add_statement.setString(1, uuid.toString());
+			}else{
+				add_statement.setString(1, readplayer + "," + uuid.toString());
+			}
+			add_statement.setInt(2, id);
+			add_statement.execute();
+		} catch (SQLException | ClassNotFoundException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
+
+	}
+
+	public static JSONArray getHttpsArrayJson(String address, Map<String, String> headers){
+		StringBuilder builder = new StringBuilder();
+		try{
+			URL url = new URL(address);
+
+			HttpURLConnection connect = (HttpURLConnection) url.openConnection();
+			connect.setRequestMethod("GET");
+			if(headers != null){
+				for(Map.Entry<String, String> header : headers.entrySet()) {
+					connect.setRequestProperty(header.getKey(), header.getValue());
+				}
+			}
+
+			connect.connect();
+
+			if(connect.getResponseCode() != HttpURLConnection.HTTP_OK){
+				InputStream in = connect.getErrorStream();
+
+				BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					builder.append(line);
+				}
+				in.close();
+				connect.disconnect();
+
+				System.out.println("DiscordWARN: " + connect.getResponseMessage());
+				new IOException(builder.toString()).printStackTrace();
+				return null;
+			}
+
+			InputStream in = connect.getInputStream();
+
+			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				builder.append(line);
+			}
+			in.close();
+			connect.disconnect();
+			JSONParser parser = new JSONParser();
+			Object obj = parser.parse(builder.toString());
+			JSONArray json = (JSONArray) obj;
+			return json;
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
 		}
 	}
 
@@ -576,7 +701,7 @@ public class ClickPostChest implements Listener {
 		}
 	}
 
-	private static void IntoBook_Jaotan(Inventory inv, String title, String message, int id, int slot) {
+	private static void IntoBook_Jaotan(Inventory inv, String title, String message, String id, int slot) {
 		ItemStack item = new ItemStack(Material.WRITTEN_BOOK, 1);
 		BookMeta bm = (BookMeta) item.getItemMeta();
 		bm.setAuthor("jaotan");
@@ -590,11 +715,11 @@ public class ClickPostChest implements Listener {
 		if(inv.getHolder() != null && inv.getHolder() instanceof Player) {
 			Player player = (Player) inv.getHolder();
 			if(postjao.containsKey(player.getName())){
-				Map<Integer, Integer> postdata = postjao.get(player.getName());
+				Map<Integer, String> postdata = postjao.get(player.getName());
 				postdata.put(slot, id);
 				postjao.put(player.getName(), postdata);
 			}else{
-				Map<Integer, Integer> postdata = new HashMap<Integer, Integer>();
+				Map<Integer, String> postdata = new HashMap<Integer, String>();
 				postdata.put(slot, id);
 				postjao.put(player.getName(), postdata);
 			}

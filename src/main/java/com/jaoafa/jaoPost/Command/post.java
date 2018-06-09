@@ -22,6 +22,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.jaoafa.jaoPost.JaoPost;
 import com.jaoafa.jaoPost.MySQL;
@@ -188,61 +190,31 @@ public class post implements CommandExecutor {
 	}
 
 	public static void ALLReadInfo(Player player){
-		Statement statement;
-		try {
-			statement = JaoPost.c.createStatement();
-		} catch (NullPointerException e) {
-			MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
-			try {
-				JaoPost.c = MySQL.openConnection();
-				statement = JaoPost.c.createStatement();
-			} catch (ClassNotFoundException | SQLException e1) {
-				e1.printStackTrace();
-				return;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return;
-		}
-		Statement statement1;
-		try {
-			statement1 = JaoPost.c.createStatement();
-		} catch (NullPointerException e) {
-			MySQL MySQL = new MySQL(JaoPost.sqlserver, "3306", "jaoafa", JaoPost.sqluser, JaoPost.sqlpassword);
-			try {
-				JaoPost.c = MySQL.openConnection();
-				statement1 = JaoPost.c.createStatement();
-			} catch (ClassNotFoundException | SQLException e1) {
-				e1.printStackTrace();
-				return;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return;
-		}
+		Map<String, String> headers = new HashMap<>();
+		headers.put("Content-Type", "application/json");
+		headers.put("Authorization", "Bot " + JaoPost.discordtoken);
+		headers.put("User-Agent", "DiscordBot (https://jaoafa.com, v0.0.1)");
 
-		statement = MySQL.check(statement);
-		statement1 = MySQL.check(statement1);
+		JSONArray MessageList = ClickPostChest.getHttpsArrayJson("https://discordapp.com/api/channels/245526046303059969/messages?limit=100", headers);
 
-		try {
-			ResultSet res = statement.executeQuery("SELECT * FROM jaoinfo WHERE readplayer NOT LIKE '%" + player.getName() + "%';");
-			int count = 0;
-			while(res.next()){
-				int id = res.getInt("id");
-				String readplayer = res.getString("readplayer");
-				if(readplayer.equalsIgnoreCase("")){
-					statement1.executeUpdate("UPDATE jaoinfo SET readplayer = \"" + player.getName() + "\" WHERE id = " + id);
-				}else{
-					statement1.executeUpdate("UPDATE jaoinfo SET readplayer = \"" + readplayer + "," + player.getName() + "\" WHERE id = " + id);
-				}
+		int count = 0;
+		int c = 0;
+		for(int i = 0; i < MessageList.size(); i++){
+			if(c >= 5 * 9){
+				break;
+			}
+			JSONObject message = (JSONObject) MessageList.get(i);
+			String id = (String) message.get("id");
+			Long type = (Long) message.get("type");
+			if(type != 0) continue;
+			if(!ClickPostChest.isMessageRead(id, player.getUniqueId())){
+				ClickPostChest.addMessageRead(id, player.getUniqueId());
 				count++;
 			}
-			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "すべてのメッセージの既読処理を終了しました。(処理件数: " + count + "件)");
-		} catch (SQLException e) {
-			// TODO 自動生成された catch ブロック
-			player.sendMessage("[jaoPost] " + ChatColor.GREEN + "既読処理にエラーが発生しました。再度お試しください。");
-			e.printStackTrace();
+			c++;
 		}
+
+		player.sendMessage("[jaoPost] " + ChatColor.GREEN + "すべてのメッセージの既読処理を終了しました。(処理件数: " + count + " / " + c + "件)");
 	}
 
 	private boolean onCommand_Show(CommandSender sender, Command cmd, String commandLabel, String[] args, Player player){
