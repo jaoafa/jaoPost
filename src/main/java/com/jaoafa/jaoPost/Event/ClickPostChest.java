@@ -476,6 +476,26 @@ public class ClickPostChest implements Listener {
 			Long type = (Long) message.get("type");
 			if(type != 0) continue;
 
+
+			// Contentフォーマット
+			JSONArray mentions = (JSONArray) message.get("mentions");
+			for(int m = 0; m < mentions.size(); m++){
+				JSONObject mention = (JSONObject) mentions.get(m);
+				String mention_userid = (String) mention.get("id");
+				String username = (String) mention.get("username");
+				String discriminator = (String) mention.get("discriminator");
+				content = content.replace("<@" + mention_userid + ">", "@" + username + "#" + discriminator)
+						.replace("<@!" + mention_userid + ">", "@" + username + "#" + discriminator);
+			}
+			JSONArray mention_roles = (JSONArray) message.get("mention_roles");
+			for(int m = 0; m < mention_roles.size(); m++){
+				JSONObject mention_role = (JSONObject) mention_roles.get(m);
+				String mention_roleid = (String) mention_role.get("id");
+				String name = (String) mention_role.get("name");
+				content = content.replace("<@&" + mention_roleid + ">", "#" + name);
+			}
+			// チャンネルも置き換えたいけどまた今度
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			long unixtime = (Long.parseLong(id) >> 22) + 1420070400000L;
 			Date date = new Date(unixtime);
