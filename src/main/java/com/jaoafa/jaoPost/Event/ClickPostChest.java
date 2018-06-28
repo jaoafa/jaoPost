@@ -282,6 +282,9 @@ public class ClickPostChest implements Listener {
 		if(event.getWhoClicked().getType() != EntityType.PLAYER) return;
 		if(event.getClickedInventory() == null) return;
 		if(!event.getClickedInventory().getName().equals("jaoPost - お知らせ")) return;
+
+		event.setCancelled(true);
+
 		Player player = (Player) event.getWhoClicked();
 		if(postjao.containsKey(player.getName())){
 			if(event.getSlot() == 53){

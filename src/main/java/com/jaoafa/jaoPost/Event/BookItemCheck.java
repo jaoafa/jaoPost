@@ -42,6 +42,8 @@ public class BookItemCheck implements Listener {
 		if(!event.getClickedInventory().getName().equals("jaoPost - アイテム送信有無選択")) return;
 		Player player = (Player) event.getWhoClicked();
 
+		event.setCancelled(true);
+
 		ItemStack is = event.getCurrentItem();
 		if(is.getType() == Material.AIR){
 			return;
