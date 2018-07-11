@@ -1,6 +1,6 @@
-name: JaoPost
+name: ${project.artifactId}
 main: com.jaoafa.jaoPost.JaoPost
-version: 0.0.3
+version: ${project.version}
 description: Messaging Plugin
 database: true
 author: mine_book000
