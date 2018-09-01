@@ -38,7 +38,7 @@ public class JaoPost extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new AdminMessageJoin(this), this);
 		getServer().getPluginManager().registerEvents(new JoinCheck(this), this);
 		getServer().getPluginManager().registerEvents(new BookItemCheck(this), this);
-		new Check().runTaskTimer(this, 24000, 24000);
+		new Check().runTaskTimerAsynchronously(this, 24000, 24000);
 
 		FileConfiguration conf = getConfig();
 
