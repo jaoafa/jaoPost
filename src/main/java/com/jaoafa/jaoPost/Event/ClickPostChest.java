@@ -490,6 +490,8 @@ public class ClickPostChest implements Listener {
 				content = content.replace("<@" + mention_userid + ">", "@" + username + "#" + discriminator)
 						.replace("<@!" + mention_userid + ">", "@" + username + "#" + discriminator);
 			}
+			/*
+ 			正常動作しないので削除
 			JSONArray mention_roles = (JSONArray) message.get("mention_roles");
 			for(int m = 0; m < mention_roles.size(); m++){
 				JSONObject mention_role = (JSONObject) mention_roles.get(m);
@@ -497,6 +499,7 @@ public class ClickPostChest implements Listener {
 				String name = (String) mention_role.get("name");
 				content = content.replace("<@&" + mention_roleid + ">", "#" + name);
 			}
+			*/
 			// チャンネルも置き換えたいけどまた今度
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
